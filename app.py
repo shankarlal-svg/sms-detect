@@ -1,20 +1,37 @@
 import streamlit as st
 import joblib
 
-st.title("SMS Spam Detection")
-st.write("Type your SMS message below and find out if it's Spam or Ham!")
+# -------------------------------
+# Load Model & Vectorizer
+# -------------------------------
+@st.cache_resource
+def load_model_files():
+    model = joblib.load("spam_model.joblib")
+    vectorizer = joblib.load("vectorizer.joblib")
+    return model, vectorizer
 
-# Load model & vectorizer
-model = joblib.load('spam_model.joblib')
-vectorizer = joblib.load('vectorizer.joblib')
+model, vectorizer = load_model_files()
 
-sms_input = st.text_area("Enter your message:")
+# -------------------------------
+# Streamlit App
+# -------------------------------
+st.set_page_config(page_title="SMS Spam Detector", page_icon="📩")
+st.title("📩 SMS Spam Detector")
+st.write("Enter a message below to check if it is Spam or Not Spam.")
+
+# User input
+user_input = st.text_area("Type your message here:")
 
 if st.button("Predict"):
-    if sms_input.strip() == "":
+    if user_input.strip() == "":
         st.warning("Please enter a message!")
     else:
-        sms_count = vectorizer.transform([sms_input])
-        prediction = model.predict(sms_count)
-        label = "Spam" if prediction[0]==1 else "Ham"
-        st.success(f"Prediction: {label}")
+        # Transform input using vectorizer
+        input_vec = vectorizer.transform([user_input])
+        prediction = model.predict(input_vec)[0]
+
+        # Display result
+        if prediction.lower() == "spam":
+            st.error("🚨 This message is SPAM!")
+        else:
+            st.success("✅ This message is NOT spam!")
